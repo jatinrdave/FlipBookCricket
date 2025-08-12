@@ -145,13 +145,16 @@ export const useCricket = create<CricketState>()(
     proceedToToss: () => set({ gamePhase: "toss" }),
     
     startMatch: (battingFirst) => {
-      const { teams } = get();
+      const { teams, gameMode } = get();
       if (!teams) return;
       
       const battingTeam = battingFirst === 'team1' ? teams.team1 : teams.team2;
       const bowlingTeam = battingFirst === 'team1' ? teams.team2 : teams.team1;
       const currentBatsman = battingTeam.players.find(p => !p.isOut) || null;
       
+      const isPlayerTeamBatting = (battingFirst === 'team1' && teams.team1.name !== 'Computer Team') ||
+                                  (battingFirst === 'team2' && teams.team2.name !== 'Computer Team');
+
       set({
         gamePhase: "playing",
         battingFirst,
@@ -159,10 +162,14 @@ export const useCricket = create<CricketState>()(
         bowlingTeam,
         currentBatsman,
         currentInnings: 1,
-        isPlayerTurn: true
+        isPlayerTurn: isPlayerTeamBatting
       });
       
       console.log(`Match started! ${battingTeam.name} batting first`);
+
+      if (!isPlayerTeamBatting && gameMode === 'vs_computer') {
+        get().computerTurn();
+      }
     },
     
     processPageResult: (pageNumber, lastDigit) => {
@@ -174,6 +181,10 @@ export const useCricket = create<CricketState>()(
       // Only even pages count
       if (pageNumber % 2 !== 0) {
         console.log("Odd page - no scoring");
+        // If it's the computer's turn and it landed on an odd page, it should try again
+        if (!state.isPlayerTurn && state.gameMode === 'vs_computer') {
+          setTimeout(() => get().computerTurn(), 1000); // Retry after 1 second
+        }
         return;
       }
       
@@ -221,25 +232,33 @@ export const useCricket = create<CricketState>()(
             gamePhase: "innings_break",
             teams: updatedTeams,
             battingTeam: updatedBattingTeam,
-            target: updatedBattingTeam.totalRuns + 1
+            target: updatedBattingTeam.totalRuns + 1,
+            isPlayerTurn: true // Reset for next innings
           });
           
           // Auto-start second innings after 3 seconds
           setTimeout(() => {
-            const { teams } = get();
+            const { teams, battingFirst, gameMode } = get();
             if (!teams) return;
             
-            const newBattingTeam = state.battingFirst === 'team1' ? teams.team2 : teams.team1;
-            const newBowlingTeam = state.battingFirst === 'team1' ? teams.team1 : teams.team2;
+            const newBattingTeam = battingFirst === 'team1' ? teams.team2 : teams.team1;
+            const newBowlingTeam = battingFirst === 'team1' ? teams.team1 : teams.team2;
             const newCurrentBatsman = newBattingTeam.players.find(p => !p.isOut) || null;
+
+            const isPlayerTeamBattingNext = (newBattingTeam.name !== 'Computer Team');
             
             set({
               gamePhase: "playing",
               currentInnings: 2,
               battingTeam: newBattingTeam,
               bowlingTeam: newBowlingTeam,
-              currentBatsman: newCurrentBatsman
+              currentBatsman: newCurrentBatsman,
+              isPlayerTurn: isPlayerTeamBattingNext
             });
+
+            if (!isPlayerTeamBattingNext && gameMode === 'vs_computer') {
+              get().computerTurn();
+            }
           }, 3000);
         } else {
           // End of match
@@ -257,31 +276,29 @@ export const useCricket = create<CricketState>()(
             gamePhase: "match_end",
             teams: updatedTeams,
             battingTeam: updatedBattingTeam,
-            matchResult
+            matchResult,
+            isPlayerTurn: true // Reset for match end
           });
         }
-      } else if (isWicket) {
-        // Get next batsman
-        const nextBatsman = updatedBattingTeam.players.find(p => !p.isOut) || null;
-        
+      } else {
+        // Continue game
+        const nextBatsman = isWicket ? updatedBattingTeam.players.find(p => !p.isOut) || null : updatedBatsman;
+        const isPlayerTeamBattingNow = (updatedBattingTeam.name !== 'Computer Team');
+
         set({
           battingTeam: updatedBattingTeam,
           currentBatsman: nextBatsman,
           teams: {
             ...state.teams!,
             [state.battingFirst === 'team1' ? 'team1' : 'team2']: updatedBattingTeam
-          }
+          },
+          isPlayerTurn: isPlayerTeamBattingNow // Ensure player turn is correctly set
         });
-      } else {
-        // Continue with same batsman
-        set({
-          battingTeam: updatedBattingTeam,
-          currentBatsman: updatedBatsman,
-          teams: {
-            ...state.teams!,
-            [state.battingFirst === 'team1' ? 'team1' : 'team2']: updatedBattingTeam
-          }
-        });
+
+        // If it's now the computer's turn, trigger it
+        if (!isPlayerTeamBattingNow && state.gameMode === 'vs_computer' && nextBatsman) {
+          setTimeout(() => get().computerTurn(), 1000); // Simulate computer thinking time
+        }
       }
     },
     
@@ -291,6 +308,23 @@ export const useCricket = create<CricketState>()(
       
       const nextBatsman = battingTeam.players.find(p => !p.isOut) || null;
       set({ currentBatsman: nextBatsman });
+    },
+
+    computerTurn: () => {
+      const state = get();
+      if (state.gameMode !== 'vs_computer' || state.isPlayerTurn || state.gamePhase !== 'playing') {
+        return;
+      }
+
+      console.log("Computer's turn...");
+      // Simulate page flip
+      const randomPage = Math.floor(Math.random() * 998) + 2; // Random page between 2 and 999
+      const lastDigit = randomPage % 10;
+
+      // Simulate a delay for the computer's "action"
+      setTimeout(() => {
+        get().processPageResult(randomPage, lastDigit);
+      }, 1500); // Simulate 1.5 seconds of "thinking"
     },
     
     restartMatch: () => set({
