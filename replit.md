@@ -49,3 +49,31 @@ Preferred communication style: Simple, everyday language.
 - **drizzle-orm & drizzle-kit** - Database ORM and migration tools
 - **connect-pg-simple** - PostgreSQL session store for Express
 - **vite-plugin-glsl** - GLSL shader support for enhanced 3D graphics
+
+
+## Original Game prompt:
+
+Create a 3D Cricket Game with below actions, Make theme proper Game Vibe.
+
+Allow the game to Two Team Match or Play with Computer.
+1.1 Allow user to choose team.
+
+Each team can have batting players upto five . Means each team have four wickets.
+
+Allow over options to be 2, 5, 10,20.
+
+Allow Toss to decide Batting Side. Who Wins the toss have always batting first as there is no option for bowling to choose.
+
+Batting team 1st player will start game.
+
+When Player presses start button It should allow to flip page of a book quickly, and when player press stop button page flip should be stopped and show a page number.
+
+Add Restart button to restart match.
+Rules:
+
+flipping a Page should be allowed only on even number and only even number should use to build up a score.
+2.If Last digit of a page number is
+2.1 Greater than 0 and less than 8, Then add it to the score card.
+2.2 Zero (0) than consider is out , Player should decrement from a team wicket.
+
+Other than above all general cricket rules should be applied.

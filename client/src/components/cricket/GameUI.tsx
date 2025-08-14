@@ -9,7 +9,10 @@ export function GameUI() {
     restartMatch,
     teams,
     currentInnings,
-    matchResult 
+    matchResult,
+    needsVerification,
+    stoppedPage,
+    confirmPageResult
   } = useCricket();
 
   return (
@@ -45,6 +48,20 @@ export function GameUI() {
       {(gamePhase === 'playing' || gamePhase === 'innings_break' || gamePhase === 'match_end') && (
         <div className="absolute top-20 left-4 right-4">
           <Scoreboard />
+        </div>
+      )}
+
+      {/* Verification UI */}
+      {needsVerification && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-auto">
+          <div className="bg-white rounded-lg p-8 text-center max-w-md">
+            <h2 className="text-2xl font-bold mb-4">Verify Result</h2>
+            <p className="text-lg mb-2">You stopped at page:</p>
+            <p className="text-4xl font-bold mb-4">{stoppedPage}</p>
+            <Button onClick={confirmPageResult} size="lg">
+              Confirm
+            </Button>
+          </div>
         </div>
       )}
 

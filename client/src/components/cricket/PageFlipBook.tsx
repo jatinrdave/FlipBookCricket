@@ -16,12 +16,13 @@ export function PageFlipBook() {
   
   const { 
     gamePhase, 
-    processPageResult, 
-    currentBatsman, 
-    isPlayerTurn 
+    isPlayerTurn, 
+    setStoppedPage,
+    setNeedsVerification,
+    currentBatsman
   } = useCricket();
   
-  const { playHit, playSuccess } = useAudio();
+  const { playHit } = useAudio();
   
   const [subscribeKeys, getKeys] = useKeyboardControls();
 
@@ -41,20 +42,8 @@ export function PageFlipBook() {
     if (stop && isFlipping && gamePhase === 'playing' && isPlayerTurn) {
       setIsFlipping(false);
       console.log("Stopped page flipping at page:", currentPage);
-      
-      // Process the result
-      if (currentPage % 2 === 0) { // Only even pages count
-        const lastDigit = currentPage % 10;
-        processPageResult(currentPage, lastDigit);
-        
-        if (lastDigit > 0 && lastDigit < 8) {
-          playSuccess();
-        } else if (lastDigit === 0) {
-          playHit(); // Different sound for wicket
-        }
-      } else {
-        console.log("Odd page - no score");
-      }
+      setStoppedPage(currentPage);
+      setNeedsVerification(true);
     }
 
     // Update page flipping animation
